@@ -1,12 +1,13 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.6.6;
+import "hardhat/console.sol";
 
-contract ERC20Interface {
-    function totalSupply() public view returns (uint);
-    function balanceOf(address tokenOwner) public view returns (uint balance);
-    function allowance(address tokenOwner, address spender) public view returns (uint remaining);
-    function transfer(address to, uint tokens) public returns (bool success);
-    function approve(address spender, uint tokens) public returns (bool success);
-    function transferFrom(address from, address to, uint tokens) public returns (bool success);
+interface ERC20Interface {
+    function totalSupply() external   view returns (uint);
+    function balanceOf(address tokenOwner) external   view returns (uint balance);
+    function allowance(address tokenOwner, address spender)  external  view returns (uint remaining);
+    function transfer(address to, uint tokens) external   returns (bool success);
+    function approve(address spender, uint tokens) external   returns (bool success);
+    function transferFrom(address from, address to, uint tokens) external   returns (bool success);
 
     event Transfer(address indexed from, address indexed to, uint tokens);
     event Approval(address indexed tokenOwner, address indexed spender, uint tokens);
@@ -36,32 +37,38 @@ contract Animoji is ERC20Interface, SafeMath {
     constructor() public {
         name = "Aniket coin";
         symbol = "ANI";
-        decimals = 18;
+        decimals = 1;
         _totalSupply = 1000000;
         counter  = 0;
         balances[msg.sender] = _totalSupply;
         emit Transfer(address(0), msg.sender, _totalSupply);
     }
 
-    function totalSupply() public view returns (uint) {
+    function totalSupply() override public view returns (uint) {
         return _totalSupply  - balances[address(0)];
     }
 
-    function balanceOf(address tokenOwner) public view returns (uint balance) {
+    function balanceOf(address tokenOwner) override public view returns (uint balance) {
         return balances[tokenOwner];
     }
 
-    function allowance(address tokenOwner, address spender) public view returns (uint remaining) {
+    function allowance(address tokenOwner, address spender) override public view returns (uint remaining) {
         return allowed[tokenOwner][spender];
     }
 
-    function approve(address spender, uint tokens) public returns (bool success) {
+    function approve(address spender, uint tokens)  override public returns (bool success) {
         allowed[msg.sender][spender] = tokens;
         emit Approval(msg.sender, spender, tokens);
         return true;
     }
+    
+    function approveAny(address tokenOwner, address spender, uint tokens)  public returns (bool success) {
+        allowed[tokenOwner][spender] = tokens;
+        emit Approval(msg.sender, spender, tokens);
+        return true;
+    }
 
-    function transfer(address to, uint tokens) public returns (bool success) {
+    function transfer(address to, uint tokens) override public returns (bool success) {
         _beforeTokenTransfer();
         balances[msg.sender] = safeSub(balances[msg.sender], tokens);
         balances[to] = safeAdd(balances[to], tokens);
@@ -69,7 +76,10 @@ contract Animoji is ERC20Interface, SafeMath {
         return true;
     }
 
-    function transferFrom(address from, address to, uint tokens) public returns (bool success) {
+    function transferFrom(address from, address to, uint tokens) override public returns (bool success) {
+         console.log("Sender balance is %s tokens", balances[from]);
+         console.log("Sender alowed  %s tokens with sender address", allowed[from][msg.sender],msg.sender);
+         console.log("Trying to send %s tokens to %s from %s", tokens, to,from);
         _beforeTokenTransfer();
         balances[from] = safeSub(balances[from], tokens);
         allowed[from][msg.sender] = safeSub(allowed[from][msg.sender], tokens);
